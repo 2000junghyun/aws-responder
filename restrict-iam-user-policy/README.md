@@ -1,79 +1,63 @@
 # Restrict IAM user policy
 
-<br>
+## Overview
 
-## Problems
-- Massive costs incurred in a short period due to large-scale EC2 instance creation
-- High likelihood that resources are already running or charges have been incurred even after anomaly detection
-- Created instances can be exploited for secondary attacks such as external system scanning, DDoS, or cryptocurrency mining
+- A Lambda-based response function that removes all EC2-related IAM permissions from a user and attaches an **explicit Deny policy** based on the username extracted from the AWS event
+- Automatically invoked by upstream threat detection systems (e.g., resource creation detectors)
+- Immediately **blocks potential abuse** and restricts the user's ability to interact with EC2 resources
 
-<br>
+## Tech Stack
 
-## Solution
-### Create Lambda Function
-**Lambda > Functions > Create function**
+- AWS Lambda
+- Python 3.9
+- AWS IAM (via Boto3)
 
-- Author from scratch
-- Function name: `Responder_RestrictIAMPolicy_EC2`
-- Runtime: Python 3.9
-- Architecture: x86_64
-- Create function
+## Directory Structure
 
-<br>
+```bash
 
-### Lambda Function Permission Settings
-
-**Path:** Configuration → Permissions → Select role under Role name → Add permissions
-
-Attach the following policy named `IAM-Policy`:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "VisualEditor0",
-      "Effect": "Allow",
-      "Action": [
-        "iam:PutUserPolicy",
-        "iam:ListAttachedUserPolicies",
-        "iam:DeleteUserPolicy",
-        "iam:AttachUserPolicy",
-        "iam:ListUserPolicies",
-        "iam:DetachUserPolicy"
-      ],
-      "Resource": "arn:aws:iam::439024478232:user/*"
-    }
-  ]
-}
-
+.
+├── lambda_function.py           # Lambda function for IAM permission restriction
+└── README.md
 ```
 
-<br>
+## How It Works
 
-## Results
-### CloudWatch Log
+- Extracts `userIdentity.userName` from the event
+- For the identified user:
+    - Removes all **attached managed policies and inline policies**
+    - Adds an **inline deny policy** that blocks all major EC2 actions
+- Logs the outcome and returns the appropriate HTTP status code (success or failure)
 
-![image5](https://github.com/user-attachments/assets/60c53c06-a59b-4701-a2bd-b5bb5acb4d38)
+## Features / Main Logic
 
+- **Remove All IAM Policies**
+    
+    Uses `list_attached_user_policies()` and `list_user_policies()`
+    
+    to remove all attached and inline policies associated with the user
+    
+- **Attach Deny Policy**
+    
+    Adds an inline policy that explicitly denies critical EC2 actions
+    
+    such as `RunInstances`, `StartInstances`, `RebootInstances`, and `CreateTags`
+    
+- **Automated Threat Response Flow**
+    
+    Designed to be called by a classifier Lambda, with `classifierSource` for source tracing
+    
+    Parses the user from `event['event']['detail']['userIdentity']['userName']`
+    
+- **Built-in Exception Handling**
+    
+    Logs and returns proper error messages if user information is missing
+    
+    or if IAM operations fail unexpectedly
+    
 
-- Successfully received information from `AbnormalEC2Creation_Detector`
-- Executed IAM policy modification
+## Motivation / Impact
 
-<br>
-
-### IAM user policy
-
-<img width="1234" alt="image6" src="https://github.com/user-attachments/assets/74ebfdaf-9a89-4317-9bc6-7165eed0a3cf" />
-
-
-- Removed existing EC2-related permissions
-- Created explicit Deny policy
-
-<br>
-
-## Expected Benefits
-
-- Early detection of large-scale EC2 instance creation attacks to prevent damage spread
-- Automatic restriction of IAM permissions to block further privilege abuse by attackers
-- Reduces operational burden and significantly improves security incident response speed
+- **Immediately restricts EC2 access for users suspected of abuse or privilege escalation**
+- Prevents malicious activity such as mass instance creation or unauthorized tagging
+- Contributes to building an **automated and resilient cloud IAM response system**
