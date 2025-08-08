@@ -46,6 +46,13 @@
     
     Supports invocation from other classifier Lambdas using the `event['classifierSource']` field to track the source of the call
     
+## Result
+**CloudWatch Log**
+<img width="773" height="92" alt="image (1)" src="https://github.com/user-attachments/assets/3fc79938-9fe3-4fc6-b121-798894d1b02a" />
+
+**IAM User Policy**
+<img width="1230" height="415" alt="image (2)" src="https://github.com/user-attachments/assets/853a5e10-e3bb-4488-8b82-23842182b582" />
+
 
 ## Motivation / Impact
 
