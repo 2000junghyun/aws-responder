@@ -51,6 +51,16 @@
     
     Designed for seamless integration with multiple classifier systems
     
+## Results
+**CloudWatch Log**
+
+<img width="1042" height="181" alt="image" src="https://github.com/user-attachments/assets/fa4a80d3-4832-432a-89c4-ccce444c562e" />
+
+<br><br>
+
+**EC2 Instances**
+
+<img width="2432" height="477" alt="image2" src="https://github.com/user-attachments/assets/a5d4a5e8-d297-43f2-a8e0-4761d635a404" />
 
 ## Motivation / Impact
 
