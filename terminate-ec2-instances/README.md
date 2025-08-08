@@ -1,93 +1,59 @@
 # Terminate EC2 instances
 
-<br>
-
 ## Overview
-- Automatically terminate or stop abnormally created EC2 instances
-- Track whether the number of created instances exceeds a predefined threshold
 
-<br>
+- A Lambda-based response function that detects and automatically stops **recently launched EC2 instances** in response to AWS events
+- Invoked by upstream threat detection systems (e.g., mass resource creation detectors) to **quickly neutralize potentially malicious instances**
+- Immediately halts **excessive resource usage or malicious instance activity**, helping prevent the spread of security incidents
 
-## Solution
-### Overview
+## Tech Stack
 
-1. Event occurs
-2. Event recorded in CloudTrail logs
-3. Logs saved in CloudWatch and metrics extracted
-4. CloudWatch alarm triggered
-5. SNS sends email notification
-6. Lambda function executes (automated response)
+- AWS Lambda
+- Python 3.9
+- AWS EC2 (via Boto3)
 
-<br>
+## Directory Structure
 
-### Lambda Function Creation
-
-**Path:** Lambda → Functions → Create function
-
-- Author from scratch
-- Function name: `Responder_StopEC2Instances`
-- Runtime: Python 3.9
-- Architecture: x86_64
-- Create function
-
-<br>
-
-### Lambda Function Permission Settings
-
-**Path:** Configuration → Permissions → Select role under Role name → Add permissions
-
-Attach the following policy named `EC2-Policy`:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "VisualEditor0",
-      "Effect": "Allow",
-      "Action": [
-        "ec2:DescribeInstances",
-        "ec2:TerminateInstances",
-        "ec2:StopInstances"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
+```bash
+.
+├── lambda_function.py                # Lambda function to stop EC2 instances
+└── README.md
 ```
 
-<br>
+## How It Works
 
-### Lambda Function SNS Integration
+- Queries EC2 instances with `running` or `pending` status at the time of execution
+- Compares each instance’s `LaunchTime` with the current time to identify **instances launched within the past 15 minutes**
+- Calls `stop_instances()` to stop identified instances
+- Logs all processed instance IDs, along with success or failure messages
 
-**Path:** Lambda → Functions → Select function → Function overview → Add trigger
+## Features / Main Logic
 
-- **Source:** SNS
-- **SNS topic:** `AbnormalEC2RunInstances`
-- The Lambda function is triggered when the `AbnormalEC2RunInstances` alarm is published.
+- **Detect Recently Launched Instances**
+    
+    Uses `describe_instances()` to retrieve all active EC2 instances
+    
+    Filters for instances launched within the last 15 minutes
+    
+- **Automated Instance Stopping**
+    
+    Executes `stop_instances()` to stop each flagged EC2 instance immediately
+    
+- **Logging and Exception Handling**
+    
+    Logs success/failure for each instance stop operation
+    
+    Captures and logs exceptions during `describe` or `stop` API calls
+    
+- **Classifier Integration Support**
+    
+    Logs the source of invocation using `event['classifierSource']`
+    
+    Designed for seamless integration with multiple classifier systems
+    
 
-<br>
+## Motivation / Impact
 
-## Results
-### EC2 Instance
-- Automatically stops recently created instances when an alarm is triggered.
-
-![image](https://github.com/user-attachments/assets/831498fa-6432-4091-8dc7-c751e91c2900)
-
-
-<br>
-
-### CloudWatch Log
-**Path:** Lambda → Functions → Select function → Monitor → View CloudWatch Logs
-
-![image2](https://github.com/user-attachments/assets/6d7db2b4-c451-4fb1-bb83-580203abbd94)
-
-- Successfully discovered recently created instances.
-- Successfully stopped the discovered instances.
-
-<br>
-
-## Expected Benefits
-- Automated initial incident response
-- Reduced operational burden for manual intervention
-- Useful for post-incident forensic analysis
+- Provides **real-time mitigation** for scenarios where an attacker launches a large number of instances
+- Improves the **response speed of automated cloud security pipelines** by acting immediately after detection
+- Can be extended to support termination, notification, or integration with cost control systems
