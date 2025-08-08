@@ -1,74 +1,54 @@
 # Deactivate access key
 
-<br>
+## Overview
 
-## Problems
-- Massive costs incurred in a short period due to large-scale EC2 instance creation
-- High likelihood that resources are already running or charges have been incurred even after anomaly detection
-- Created instances can be exploited for secondary attacks such as external system scanning, DDoS, or cryptocurrency mining
+- A Lambda-based response function that extracts the **Access Key ID and user name** from AWS event data and deactivates the associated access key
+- Automatically invoked by upstream detection systems (e.g., threat IP classifier, resource creation detector)
+- Immediately **disables compromised or misused credentials** to contain potential security breaches in real time
 
-<br>
+## Tech Stack
 
-## Solution
-### Create Lambda Function
-**Lambda > Functions > Create function**
+- AWS Lambda
+- Python 3.9
+- AWS IAM (via Boto3)
 
-- Author from scratch
-- Function name: `Responder_DeactivateAccessKey`
-- Runtime: Python 3.9
-- Architecture: x86_64
-- Create function
+## Directory Structure
 
-<br>
-
-### Lambda Function Permission Settings
-
-**Path:** Configuration → Permissions → Select the role under Role name → Add permissions
-
-Attach the following policy named `IAM-Policy`:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "VisualEditor0",
-      "Effect": "Allow",
-      "Action": [
-        "iam:UpdateAccessKey",
-        "iam:ListAccessKeys"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-
+```bash
+.
+├── lambda_function.py                # Lambda function to deactivate access keys
+└── README.md
 ```
 
-<br>
+## How It Works
 
-## Results
-### CloudWatch Log
+- Parses the values of `userIdentity.accessKeyId` and `userIdentity.userName` from the incoming event
+- Calls the IAM API (`update_access_key`) to set the access key status to `'Inactive'`
+- Logs success or failure and returns appropriate HTTP status codes
 
-<img width="385" alt="image7" src="https://github.com/user-attachments/assets/6c6a435b-f94b-4434-9735-6a17d2a6b716" />
+## Features / Main Logic
 
+- **Precise Target Identification**
+    
+    Extracts both `accessKeyId` and `userName` from the event to ensure exact targeting
+    
+- **IAM Integration for Credential Control**
+    
+    Uses `iam.update_access_key()` to instantly deactivate the compromised access key
+    
+- **Robust Error Handling**
+    
+    Gracefully handles missing users or keys with `NoSuchEntityException`
+    
+    Catches unexpected exceptions and logs detailed error messages
+    
+- **Classifier Integration Support**
+    
+    Supports invocation from other classifier Lambdas using the `event['classifierSource']` field to track the source of the call
+    
 
-- Successfully received information from `Classifier_MassResourceCreation`
-- Executed Access Key deactivation
+## Motivation / Impact
 
-<br>
-
-### IAM User Policy
-
-<img width="1230" alt="image8" src="https://github.com/user-attachments/assets/d066c426-ff26-4ed9-9767-aa5632b25769" />
-
-
-- Confirmed Access Key has been deactivated
-
-<br>
-
-## Expected Benefits
-
-- Immediately disables compromised Access Keys used in attacks to prevent further abuse
-- Quickly blocks abnormal API calls to minimize system damage
-- Reduces operator response time through automated incident handling
+- **Immediately blocks stolen or misused credentials**, reducing risk of further compromise
+- Prevents attacks such as mass EC2 provisioning, data exfiltration, or privilege escalation
+- Serves as a key component in building an **automated cloud threat response system**
