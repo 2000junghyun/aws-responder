@@ -55,6 +55,17 @@
     
     or if IAM operations fail unexpectedly
     
+## Results
+**CloudWatch Log**
+
+<img width="475" height="158" alt="image" src="https://github.com/user-attachments/assets/f73b6dba-a4e2-4528-b247-1e8eef97dc62" />
+
+<br><br>
+
+**IAM User Policy**
+
+<img width="1234" height="413" alt="image2" src="https://github.com/user-attachments/assets/56764177-5a26-4478-a31e-d378ebed20f9" />
+
 
 ## Motivation / Impact
 
